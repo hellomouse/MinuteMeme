@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Hello World!</title>
+
+        <link rel="stylesheet" href="./public/css/toggle.css">
+        <link rel="stylesheet" href="./public/css/main.css">
+
+        <!-- Indeterminate progress bar -->
+        <link rel="stylesheet" href="./public/css/mprogress.min.css">
+        <script src="./public/js/mprogress.min.js"></script>
+
+        <!-- Autocomplete library -->
+        <link rel="stylesheet" href="./public/css/auto-complete.css">
+        <script src="./public/js/auto-complete.js"></script>
+
+        <!-- Snackbar -->
+        <link rel="stylesheet" type="text/css" href="./public/css/snackbar.css" />
+        <script src="./public/js/snackbar.js"></script>
+
+        <link href="https://fonts.googleapis.com/css?family=Rubik" rel="stylesheet">
+
+        <!-- Preloading -->
+        <link rel="preload" href="http://www.aajkikhabar.com/en/wp-content/uploads/2019/01/Facebook-dark-mode-for-Messenger-2.png" as="image">
+    </head>
+    <body>
+        <script>
+            // TODO move to own script
+            const settings = require('./src/settings.js');
+            const login = require('./src/login.js');
+            const openUrl = require('open');
+            // require('./renderer.js')
+
+            // Global display grid generator instance
+            const Generator = require('./src/display-grid-generator.js');
+            const generator = new Generator();
+
+            // Function for links to be processed in browser instead of in window
+            document.querySelector('body').addEventListener('click', event => {
+                if (event.target.tagName.toLowerCase() === 'a' && event.target.href.startsWith('http')) {
+                    event.preventDefault();
+                    require('electron').shell.openExternal(event.target.href);
+                }
+            });
+        </script>
+
+        <div id="memes" class="memes"></div>
+
+        <!-- First time login -->
+        <div id="first-time-login" class="login-page" style="display: none">
+
+            <!-- TODO
+                background image for this
+                    columns of memes
+                    redesign by self
+                github and shit in the top bar
+
+                2. meme loading?
+
+                left: subreddits that are enabled to view
+                right: links and additional tags
+
+                dont load full image if HD
+
+                logout button in settings?
+            -->
+
+            <img class="login-background" src="http://www.aajkikhabar.com/en/wp-content/uploads/2019/01/Facebook-dark-mode-for-Messenger-2.png">
+        
+            <div class="login-container">
+                <h1 class="login-title">⏱ MINUTE MEME</h1><br><br>
+                
+                <small style="color: red" id="login-error"></small><br><br>
+
+                <small style="color: gray">Reddit Username</small><br>
+                <input type="text" style="width: 90%" id="login-username"></input><br><br>
+
+                <small style="color: gray">Reddit Password</small><br>
+                <input type="password" style="width: 74%" id="login-password"></input>
+                <button class="password-toggle button" onclick="login.togglePasswordInput(document.getElementById('login-password'), this)">Show</button>
+                
+                <br><br>
+                <small style="color: gray">App ID <span style="color: red">*</span></small><br>
+                <input type="text" style="width: 90%" id="login-app-id" onblur="login.verifyAppID()"></input><br><br>
+
+                <small style="color: gray">App Secret <span style="color: red">*</span></small><br>
+                <input type="password" style="width: 74%" id="login-app-secret"></input>
+                <button class="password-toggle button" onclick="login.togglePasswordInput(document.getElementById('login-app-secret'), this)">Show</button>
+                
+                <br><br><br>
+                <button onclick="settings.doLogin(true)" id="login-submit" class="login-button">Login</button>
+                <img src="" style="display: none" width="25px" height="25px" id="login-loading-image">
+
+                <br><br><br><br>
+                <small style="color: gray">
+                    You only need to do this once. Login details are encrypted on disk.
+                </small><br><br>
+                <small style="color: gray">
+                    <span style="color: red">*</span> Register for an app id and secret at
+                    <a onclick="aTagOnClick" href="https://www.reddit.com/prefs/apps">https://www.reddit.com/prefs/apps</a> and clicking
+                    "are you a developer? create an app...". App ID is the 14 character string by your app name.
+                    Detailed instructions
+                    <a onclick="aTagOnClick" href="https://github.com/reddit-archive/reddit/wiki/oauth2">here.</a>
+                </small>
+            </div>
+        </div>
+
+        <!-- First time login: encryption settings -->
+        <div id="first-time-encryption" class="login-page" style="display: none">
+            <img class="login-background"
+                src="http://www.aajkikhabar.com/en/wp-content/uploads/2019/01/Facebook-dark-mode-for-Messenger-2.png">
+            
+            <div class="login-container" style="height: 650px">
+                <h1>Encryption Setup</h1><br>
+                <p>
+                    The first time you login you can (optionally) set up a password to login 
+                    each time you start the app. Leave the field blank to automatically login instead.
+                </p>
+                <p>
+                    This "password" is the encryption key used to encrypt your login details. If you do 
+                    not specify one a random one will be generated for you.
+                </p>
+                <br><br>
+                <small style="color: gray">New Encryption key</small><br>
+                <input type="password" style="width: 74%" id="login-encryption-key" oninput="login.encryptionOnChange(this.value)"></input>
+                <button class="password-toggle button"
+                    onclick="login.togglePasswordInput(document.getElementById('login-encryption-key'), this)">Show</button>
+                <br><br><br>
+
+                <button class="login-button" id="encryption-button" onclick="login.submitEncryptionKey()">Generate key</button>
+                <br><br><br><br><br>
+                <small style="color: gray">If you do not input a custom encryption key, the random encryption key will be saved in plaintext 
+                    in the settings file. As long as no one else has access to your computer this should not be an issue.
+                </small>
+
+            </div>
+        </div>
+
+        <!-- Logging in again -->
+        <div id="not-first-time-encryption" class="login-page" style="display: none">
+            <img class="login-background"
+                src="http://www.aajkikhabar.com/en/wp-content/uploads/2019/01/Facebook-dark-mode-for-Messenger-2.png">
+        
+            <div class="login-container" style="height: 500px">
+                <h1>Login</h1><br>
+                <p>
+                    Please enter your encryption key so MinuteMeme can logon to reddit. If you forgot 
+                    your encryption key you can click <a href="javascript:;" onclick="settings.resetLogin()">here</a> to reset it (You will need to relogin).
+                </p>
+
+                <br>
+                <small style="color: red" id="login-error-2"></small><br><br>
+
+                <br>
+                <small style="color: gray">Encryption key</small><br>
+                <input type="password" style="width: 74%" id="login-encryption-key-2"></input>
+                <button class="password-toggle button"
+                    onclick="login.togglePasswordInput(document.getElementById('login-encryption-key-2'), this)">Show</button>
+                <br><br><br>
+        
+                <button class="login-button" id="encryption-login-button" onclick="settings.doLogin()">Login</button>
+                <img src="" style="display: none" width="25px" height="25px" id="login-loading-image-2">
+            </div>
+        </div>
+
+        <!-- Submit login on enter, for above 3 pages -->
+        <script>
+            document.addEventListener('keydown', e => {
+                let key = e.keyCode || e.which;
+                if (key === 13) { // Enter
+                    if (document.getElementById('first-time-login').style.display !== 'none')
+                        document.getElementById('login-submit').click();
+                    else if (document.getElementById('first-time-encryption').style.display !== 'none')
+                        document.getElementById('encryption-button').click();
+                    else if (document.getElementById('not-first-time-encryption').style.display !== 'none')
+                        document.getElementById('encryption-login-button').click();
+                }
+            });
+        </script>
+
+        <!-- All setting modals -->
+        <div id="settings" style="display: block">
+            <h2><button style="border: none; position: relative; top: -3px"
+                    onclick="document.getElementById('settings').style.display = 'none';">◀</button> Settings</h2>
+            <div class="button-row">
+                <button id="settings-btn-1" onclick="settings.setTab(1)" class="active">Interface</button>
+                <button id="settings-btn-2" onclick="settings.setTab(2)">Meme Data</button>
+                <button id="settings-btn-3" onclick="settings.setTab(3)">Subreddits</button>
+                <button id="settings-btn-4" onclick="settings.setTab(4)">Advanced</button>
+            </div>
+            <br><br>
+
+            <div id="settings-1">     
+                <label class="switch-light switch-material" id="settings-theme">
+                    <input type="checkbox" onclick="settings.applyTheme()" checked>
+                    Dark Theme
+                    <span class="toggle-edit">
+                        <span>Off</span>
+                        <span>On</span>
+                        <a></a>
+                    </span>
+                </label>
+                <br>
+
+                <fieldset>
+                    <legend>Rendering NSFW Images</legend>
+                    <div class="switch-toggle switch-material">
+                        <input id="nsfw1" name="view" type="radio" checked>
+                        <label for="nsfw1" onclick="settings.applyNSFW('show')">Show</label>
+                
+                        <input id="nsfw2" name="view" type="radio">
+                        <label for="nsfw2" onclick="settings.applyNSFW('spoiler')">Blur</label>
+                
+                        <input id="nsfw3" name="view" type="radio">
+                        <label for="nsfw3" onclick="settings.applyNSFW('hide')">Hide</label>    
+
+                        <a></a>
+                    </div>
+
+                    <img src="./public/img/nsfw-1.png" style="margin-right: 120px; margin-left: 75px;">
+                    <img src="./public/img/nsfw-2.png" style="margin-right: 120px;">
+                    <img src="./public/img/nsfw-3.png">
+                </fieldset>
+
+                <br><br>
+
+                <fieldset>
+                    <legend>Clicking on an image...</legend>
+                    <div class="switch-toggle switch-material">
+                        <input id="settings-image-click-1" name="view" type="radio" checked>
+                        <label for="settings-image-click-1" onclick="settings.applyImageClick('url')">Opens URL</label>
+                
+                        <input id="settings-image-click-2" name="view" type="radio">
+                        <label for="settings-image-click-2" onclick="settings.applyImageClick('enlarge')">Enlarges Image</label>
+                
+                        <a></a>
+                    </div>
+                </fieldset>
+
+            </div>
+            <div id="settings-2" style="display: none">
+                <h3>Saving</h3>
+
+                <div style="max-width: 600px">
+                    <label>Default Save directory </label>
+                    <button class="button" style="float: right"
+                        onclick="document.getElementById('settings-dir-file-input').click()">Select folder</button>
+                    <input type="file" id="settings-dir-file-input"
+                        style="opacity: 0; position: relative; top: -99999px" webkitdirectory
+                        onchange="settings.applySaveDir(this.files[0].path)"></input>
+                    <small style="color: #888" id="settings-save-dir-label">No save directory selected</small>
+                    <br><br>
+                </div>
+
+                <label class="switch-light switch-material" id="settings-copy-favorites">
+                    <input type="checkbox" onclick="settings.applySaveFavoriteToSeperateFolder()" checked>
+                    Copy favorites to seperate folder
+                    <span class="toggle-edit">
+                        <span>Off</span>
+                        <span>On</span>
+                        <a></a>
+                    </span>
+                </label>
+                <br><br>
+
+                <h3>Fetching</h3>
+
+                <div style="max-width: 600px">
+                    Don't show posts more than 
+                    <input id="settings-max-post-age" oninput="settings.applyMaxPostAge(this.value)" type="number" style="width: 50px" placeholder="2" min="0"></input> days old
+                </div>
+                <br>
+
+                <label class="switch-light switch-material" id="settings-remove-low-res">
+                    <input type="checkbox" onclick="settings.applyRemoveLowRes()" checked>
+                    Remove Low Res Images
+                    <span class="toggle-edit">
+                        <span>Off</span>
+                        <span>On</span>
+                        <a></a>
+                    </span>
+                </label>
+                <br>
+
+                <label class="switch-light switch-material" id="settings-allow-spoilers">
+                    <input type="checkbox" onclick="settings.applyAllowSpoilers()" checked>
+                    Allow spoilers
+                    <span class="toggle-edit">
+                        <span>Off</span>
+                        <span>On</span>
+                        <a></a>
+                    </span>
+                </label>
+                <br>
+
+                <div style="max-width: 450px">
+                    Load up to 
+                    <input type="number" style="width: 50px" placeholder="30" id="settings-max-posts-per-sub"
+                        min="0", oninput="settings.applyMaxPostsPerSubReddit(this.value)"></input> posts per subreddit
+                </div>
+
+                <br>
+
+                <br><br>
+            </div>
+
+            <div id="settings-3" style="display: none">
+                <h3>Adding Subreddits</h3>
+                <button class="button">Load subreddits from profile</button><br>
+                <small style="margin-top: 10px; display: block">Merges current subs with ones listed on your profile</small><br><br>
+
+                Add subreddit<br><br>
+                <input type="text" name="subreddit-finder" id="subreddit-finder" placeholder="ie dankmemes"></input>
+                <button class="button" onclick="settings.addSubreddit(document.getElementById('subreddit-finder').value)">Add Subreddit</button>
+                <script>
+                    /* Autocompletion */
+                    new autoComplete({
+                        selector: 'input[name="subreddit-finder"]',
+                        minChars: 2,
+                        offsetTop: -40,
+                        source: function (term, suggest) {
+                            term = term.toLowerCase();
+                            if (!generator.connection) { suggest([]); } // Not logged in for API yet
+                            generator.connection.api.get('/api/subreddit_autocomplete_v2',{
+                                query: term,
+                                include_profiles: false,
+                                limit: 10
+                            }).then(res => {
+                                if (res[0] !== 200) suggest([]); // Error of some sort
+                                else suggest(res[1].data.children.map(x => x.data.display_name));
+                            });
+                        }
+                    });
+                </script>
+
+                <br><br><br>
+                <h3>Subreddit List</h3>
+                <ul class="subreddit-list" id="settings-subreddit-list">
+                    <li>
+                        <!--<label class="switch-light switch-material" onclick="">
+                            <input type="checkbox">
+                            <img src="https://pbs.twimg.com/media/CyW8mDIVIAE41BX.jpg" class="subreddit-image">
+                            physicsmemes
+                            <span class="toggle-edit">
+                                <span>Off</span>
+                                <span>On</span>
+                                <a></a>
+                            </span>
+                        </label> -->
+                        <img src="https://pbs.twimg.com/media/CyW8mDIVIAE41BX.jpg" class="subreddit-image">
+                        physicsmemes
+                        <span class="subreddit-remove">Remove</span>
+                        <br><br>
+
+                        <div class="subreddit-settings">
+                            <label class="switch-light switch-material" onclick="">
+                                <input type="checkbox">
+                                Remove NSFW
+                                <span class="toggle-edit">
+                                    <span>Off</span>
+                                    <span>On</span>
+                                    <a></a>
+                                </span>
+                            </label><br>
+                
+                            Save Loc
+                            <button class="button" style="float: right" onclick="document.getElementById('').click()">Select
+                                folder</button>
+                            <input type="file" id="" style="opacity: 0; position: relative; top: -99999px" webkitdirectory
+                                onchange="settings.applySaveDir(this.files[0].path)"></input>
+                            <br>
+                            <small style="color: #888" id="sa">No save directory selected</small>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div id="settings-4" style="display: none">
+                Default browser <input type="text" placeholder="ie chrome" id="settings-default-browser"
+                    onchange="settings.applyDefaultBrowser(this.value)"></input><br><br>
+                <small>
+                The browser name must be accepted by 'open' on macOS, 'start' on Windows and 'xdg-open' for others<br>
+                Alternatively pass the path to the executable of the browser</small>
+            </div>
+        </div>
+
+
+        <!-- Loading splash page while the app loads -->
+        <div id="loading-splash-page" class="login-page" style="display: block">
+            <img class="login-background"
+                src="http://www.aajkikhabar.com/en/wp-content/uploads/2019/01/Facebook-dark-mode-for-Messenger-2.png">
+            <div class="splash-center splash">
+                <h1 class="splash-title">⏱ MINUTE MEME</h1>
+                <p style="font-size: 20pt">
+                    <img src="./public/img/loading.gif" style="margin-right: 20px" width="25px" height="25px">
+                </p>
+            </div>
+        </div>
+
+        <!-- Load settings after HTML renders -->
+        <script>
+            setTimeout(settings.loadAllSettings, 50);
+        </script>
+
+    </body>
+</html>

@@ -1,0 +1,106 @@
+// is_video: false
+        // media
+        // media_embed
+        // over_18:
+        // permalink
+        /*
+        author: "HerosNeedAZero"
+author_flair_background_color: null
+author_flair_css_class: null
+author_flair_richtext: []
+author_flair_template_id: null
+author_flair_text: null
+author_flair_text_color: null
+author_flair_type: "text"
+author_fullname: "t2_2xr8uivh"
+*/
+        // preview
+        // title
+        // score
+        // thumbnail: null
+        // url
+        // content_categories
+        // num_comments
+
+
+settings clicking on radio switches other pair
+
+meme browser - load reddit shit
+- auto download into folders
+- favourite memes
+- redirect to page to comment - select browser
+- redirect to upvote
+- video redirect
+- optionally censor nsfw content until click
+- click on picture 
+  - go to url / zoom in
+
+
+
+light / dark theme
+
+https://play.google.com/store/apps/details?id=com.appstronautstudios.memebrowser
+
+https://github.com/hellomouse/MinuteMeme
+
+offline fonts
+
+remove mprogress?
+
+load subreddits from profile 
+clear subreddit list 
+
+
+
+disable main body scroll when in settings
+
+generator.connection.api.get('/subreddits/mine/subscriber', { limit: 100 }).then(res => {
+    if (res[0] !== 200) return; // Error of some sort
+    let subs = res[1].data.children
+        .filter(x => !x.data.display_name.startsWith('u_')) // Filter out users
+        .map(x => x.data);
+    console.log(subs.map(x => x.display_name));
+});
+
+
+meme creator
+
+
+
+
+use shell.open if cannot open with default browser speicifed
+
+open link in browser in login - modify for speciifc class tpyes
+
+
+select specific subreddit 
+check date
+
+sort by date, score, etc...
+
+remove useless keys
+
+embed youtube instead of thumbnailing
+
+load twitter link urls - image
+
+font offline https://fonts.google.com/?category=Sans+Serif&selection.family=Rubik
+
+https://coolors.co/export/png/d4e6b5-afc97e-e2d686-ffdf64-877b66
+
+
+
+https://stackoverflow.com/questions/45849190/how-to-show-an-open-file-native-dialog-with-electron
+https://electronjs.org/docs/api/clipboard
+https://github.com/nathanbuchar/electron-settings/wiki/API-Documentation#deleteall
+
+handle spoiler images
+
+
+max posts to load per sub
+
+shuffle / in order / etc...
+
+
+you have no subs default page
+
